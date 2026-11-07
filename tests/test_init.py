@@ -246,3 +246,47 @@ async def test_unload_closes_connection(
     assert client.connected
     assert await hass.config_entries.async_unload(entry.entry_id)
     assert not client.connected
+
+
+async def test_adopts_lxp_bridge_ids_for_restored_entities(
+    hass: HomeAssistant, dongle: FakeDongle
+) -> None:
+    """Re-adding an entry gives entities back their old IDs; setup moves them over."""
+    registry = er.async_get(hass)
+    prefix = f"lxp_{DATALOG.lower()}"
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        title="SNA5000",
+        unique_id=SERIAL,
+        data={
+            CONF_HOST: "127.0.0.1",
+            CONF_PORT: dongle.port,
+            CONF_DATALOG: DATALOG,
+            CONF_LEGACY_IDS: True,
+        },
+    )
+    entry.add_to_hass(hass)
+    # As restored from a deleted entry: friendly IDs, and runtime saved in hours
+    pv = registry.async_get_or_create(
+        "sensor", DOMAIN, f"{SERIAL}_e_pv_all", suggested_object_id="garage_sna5000_pv_total"
+    )
+    runtime = registry.async_get_or_create(
+        "sensor", DOMAIN, f"{SERIAL}_runtime", suggested_object_id="garage_sna5000_total_runtime"
+    )
+    registry.async_update_entity_options(
+        runtime.entity_id, "sensor.private", {"suggested_unit_of_measurement": "h"}
+    )
+    # Something else holds one target ID: that entity is left alone
+    registry.async_get_or_create("sensor", "other", "x", suggested_object_id=f"{prefix}_status")
+    registry.async_get_or_create(
+        "sensor", DOMAIN, f"{SERIAL}_status", suggested_object_id="garage_sna5000_status"
+    )
+
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+
+    assert registry.async_get(pv.entity_id) is None
+    assert hass.states.get(f"sensor.{prefix}_pv_generation_all_time").state == "18836.9"
+    runtime_state = hass.states.get(f"sensor.{prefix}_total_runtime")
+    assert runtime_state.attributes["unit_of_measurement"] == "s"
+    assert _entity_id(hass, "sensor", "status") == "sensor.garage_sna5000_status"

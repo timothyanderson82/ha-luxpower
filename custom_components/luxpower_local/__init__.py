@@ -11,8 +11,9 @@ from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.typing import ConfigType
 
 from .client import LuxClient
-from .const import ATTR_CONFIG_ENTRY_ID, CONF_DATALOG, DOMAIN, SERVICE_REFRESH
+from .const import ATTR_CONFIG_ENTRY_ID, CONF_DATALOG, CONF_LEGACY_IDS, DOMAIN, SERVICE_REFRESH
 from .coordinator import LuxConfigEntry, LuxCoordinator
+from .legacy import async_adopt_legacy_ids
 
 PLATFORMS = [Platform.NUMBER, Platform.SENSOR, Platform.SWITCH, Platform.TIME]
 
@@ -55,6 +56,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: LuxConfigEntry) -> bool:
         await client.close()
         raise
     entry.runtime_data = coordinator
+    if entry.data.get(CONF_LEGACY_IDS) and entry.unique_id:
+        async_adopt_legacy_ids(hass, entry.unique_id, entry.data[CONF_DATALOG])
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     return True
 
