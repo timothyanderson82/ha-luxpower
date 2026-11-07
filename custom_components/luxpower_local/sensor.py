@@ -23,9 +23,11 @@ from homeassistant.const import (
     UnitOfTemperature,
     UnitOfTime,
 )
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
+from .const import CONF_HIDDEN_STRINGS, DOMAIN
 from .coordinator import LuxConfigEntry, LuxCoordinator
 from .entity import LuxEntity
 from .registers import FAULTS, WARNINGS, code_text, status_text
@@ -85,10 +87,14 @@ def _like(base: LuxSensorDescription, key: str, name: str, **kwargs) -> LuxSenso
     return replace(base, key=key, name=name, **kwargs)
 
 
+PV_STRINGS = (1, 2, 3)
+PV_STRING_KEYS = ("v_pv", "p_pv", "e_pv_day", "e_pv_all")
+
+
 def _pv_strings(base, key, name, legacy, **kwargs):
     return [
         _like(base, f"{key}_{n}", f"{name} string {n}", legacy=f"{legacy}_string_{n}", **kwargs)
-        for n in (1, 2, 3)
+        for n in PV_STRINGS
     ]
 
 
@@ -263,10 +269,54 @@ async def async_setup_entry(
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
     coordinator = entry.runtime_data
+    unused = _unused_strings(coordinator)
+    _async_hide_unused_strings(hass, entry, unused)
+    unused_keys = {f"{key}_{n}" for n in unused for key in PV_STRING_KEYS}
     async_add_entities(
-        LuxSensor(coordinator, description)
+        LuxSensor(
+            coordinator,
+            replace(description, entity_registry_visible_default=False)
+            if description.key in unused_keys
+            else description,
+        )
         for description in SENSORS
         if coordinator.read_bms or not description.bms
+    )
+
+
+def _unused_strings(coordinator: LuxCoordinator) -> set[int]:
+    """PV strings that have never generated anything, i.e. have no panels."""
+    inputs = coordinator.data.inputs
+    return {n for n in PV_STRINGS if inputs.get(f"e_pv_all_{n}") == 0}
+
+
+@callback
+def _async_hide_unused_strings(
+    hass: HomeAssistant, entry: LuxConfigEntry, unused: set[int]
+) -> None:
+    """Hide an unused string's sensors once, and show them again if it starts producing.
+
+    Each string is only hidden the first time it is seen unused, so a sensor
+    the user unhides stays visible.
+    """
+    handled = set(entry.data.get(CONF_HIDDEN_STRINGS, []))
+    if unused == handled:
+        return
+    registry = er.async_get(hass)
+    for n in unused ^ handled:
+        hide = n in unused
+        for key in PV_STRING_KEYS:
+            entity_id = registry.async_get_entity_id(
+                "sensor", DOMAIN, f"{entry.unique_id}_{key}_{n}"
+            )
+            if not entity_id or not (reg_entry := registry.async_get(entity_id)):
+                continue
+            if hide and reg_entry.hidden_by is None:
+                registry.async_update_entity(entity_id, hidden_by=er.RegistryEntryHider.INTEGRATION)
+            elif not hide and reg_entry.hidden_by is er.RegistryEntryHider.INTEGRATION:
+                registry.async_update_entity(entity_id, hidden_by=None)
+    hass.config_entries.async_update_entry(
+        entry, data={**entry.data, CONF_HIDDEN_STRINGS: sorted(unused)}
     )
 
 

@@ -11,6 +11,8 @@ CONF_LEGACY_IDS = "legacy_entity_ids"
 CONF_SCAN_INTERVAL = "scan_interval"
 CONF_HOLDING_INTERVAL = "holding_interval"
 CONF_READ_BMS = "read_bms"
+# PV strings whose sensors this integration has hidden as unused
+CONF_HIDDEN_STRINGS = "hidden_pv_strings"
 
 DEFAULT_SCAN_INTERVAL = 10
 MIN_SCAN_INTERVAL = 5

@@ -292,3 +292,41 @@ async def test_adopts_lxp_bridge_ids_for_restored_entities(
     runtime_state = hass.states.get(f"sensor.{prefix}_total_runtime")
     assert runtime_state.attributes["unit_of_measurement"] == "s"
     assert _entity_id(hass, "sensor", "status") == "sensor.garage_sna5000_status"
+
+
+async def test_unused_pv_string_hidden(
+    hass: HomeAssistant, entry: MockConfigEntry, dongle: FakeDongle
+) -> None:
+    """The recorded inverter has nothing on string 3."""
+    await _setup(hass, entry)
+    registry = er.async_get(hass)
+    for key in ("v_pv_3", "p_pv_3", "e_pv_day_3", "e_pv_all_3"):
+        hidden = registry.async_get(_entity_id(hass, "sensor", key)).hidden_by
+        assert hidden is er.RegistryEntryHider.INTEGRATION, key
+    assert registry.async_get(_entity_id(hass, "sensor", "p_pv_1")).hidden_by is None
+
+
+async def test_unused_string_hidden_once_and_shown_when_used(
+    hass: HomeAssistant, entry: MockConfigEntry, dongle: FakeDongle
+) -> None:
+    registry = er.async_get(hass)
+    # Registered and visible before this release
+    existing = registry.async_get_or_create(
+        "sensor", DOMAIN, f"{SERIAL}_p_pv_3", suggested_object_id="inverter_pv_power_string_3"
+    )
+    await _setup(hass, entry)
+    assert registry.async_get(existing.entity_id).hidden_by is er.RegistryEntryHider.INTEGRATION
+
+    # The user shows it again; a reload must not hide it a second time
+    registry.async_update_entity(existing.entity_id, hidden_by=None)
+    assert await hass.config_entries.async_reload(entry.entry_id)
+    await hass.async_block_till_done()
+    assert registry.async_get(existing.entity_id).hidden_by is None
+
+    # Panels added to string 3: whatever the integration hid comes back
+    voltage = _entity_id(hass, "sensor", "v_pv_3")
+    assert registry.async_get(voltage).hidden_by is er.RegistryEntryHider.INTEGRATION
+    dongle.inputs[44] = 15
+    assert await hass.config_entries.async_reload(entry.entry_id)
+    await hass.async_block_till_done()
+    assert registry.async_get(voltage).hidden_by is None
