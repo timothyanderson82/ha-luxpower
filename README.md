@@ -68,3 +68,8 @@ no counterpart.
 
 The dongle protocol and register map come from
 [lxp-bridge](https://github.com/celsworth/lxp-bridge) by Chris Elsworth (MIT).
+
+The LuxPower name and logo are trademarks of LuxPower Tek. They are used here
+only to identify the inverters this integration works with; this project is
+not affiliated with or endorsed by LuxPower. The brand images are traced from
+the logo on luxpowertek.com by `scripts/make_brand.py`.
