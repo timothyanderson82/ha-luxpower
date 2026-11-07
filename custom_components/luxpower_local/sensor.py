@@ -196,8 +196,8 @@ SENSORS: list[LuxSensorDescription] = [
         legacy="total_runtime",
         device_class=SensorDeviceClass.DURATION,
         state_class=SensorStateClass.TOTAL_INCREASING,
+        # Seconds, as lxp-bridge reported it, so its long-term statistics carry on
         native_unit_of_measurement=UnitOfTime.SECONDS,
-        suggested_unit_of_measurement=UnitOfTime.HOURS,
         **DIAGNOSTIC,
     ),
     # From the battery's BMS
