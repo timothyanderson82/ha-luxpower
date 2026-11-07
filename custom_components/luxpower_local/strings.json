@@ -1,0 +1,74 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect to the inverter's Wi-Fi dongle",
+        "data": {
+          "host": "Host",
+          "port": "Port",
+          "datalog": "Dongle serial",
+          "name": "Name",
+          "legacy_entity_ids": "Use lxp-bridge entity IDs"
+        },
+        "data_description": {
+          "host": "IP address of the Wi-Fi dongle plugged into the inverter.",
+          "port": "The dongle listens on 8000 unless it has been changed.",
+          "datalog": "The 10-character serial on the dongle's label, also shown in the LuxPower app as the datalog.",
+          "legacy_entity_ids": "Give entities the IDs lxp-bridge's MQTT entities had (sensor.lxp_[serial]_...), so their history and the energy dashboard carry on. Delete the old MQTT entities first."
+        }
+      },
+      "reconfigure": {
+        "title": "Change the dongle's address",
+        "data": {
+          "host": "Host",
+          "port": "Port",
+          "datalog": "Dongle serial"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "The dongle did not answer. Check the host, port and serial.",
+      "invalid_serial": "The serial must be 10 characters.",
+      "legacy_ids_taken": "The lxp-bridge entity IDs are still in use ({entities}, ...). Stop lxp-bridge, clear its MQTT discovery messages and delete its entities first, or untick the option."
+    },
+    "abort": {
+      "already_configured": "This inverter is already set up.",
+      "reconfigure_successful": "The connection was updated.",
+      "wrong_inverter": "That dongle is connected to a different inverter."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Polling",
+        "data": {
+          "scan_interval": "Reading interval",
+          "holding_interval": "Settings interval",
+          "read_bms": "Read battery BMS data"
+        },
+        "data_description": {
+          "scan_interval": "How often to read power, energy and temperatures.",
+          "holding_interval": "How often to re-read the inverter's settings. They are also read after every change made from Home Assistant.",
+          "read_bms": "Cell voltages and temperatures, current limits and cycle count as reported by the battery. Turn off if your battery does not report them."
+        }
+      }
+    }
+  },
+  "services": {
+    "refresh": {
+      "name": "Refresh",
+      "description": "Reads every reading and setting from the inverter now.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Inverter",
+          "description": "Only this inverter; all of them if left empty."
+        }
+      }
+    }
+  },
+  "exceptions": {
+    "entry_not_loaded": {
+      "message": "That inverter is not loaded."
+    }
+  }
+}

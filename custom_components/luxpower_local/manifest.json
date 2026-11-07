@@ -1,0 +1,14 @@
+{
+  "domain": "luxpower_local",
+  "name": "LuxPower Local",
+  "codeowners": [
+    "@timothyanderson82"
+  ],
+  "config_flow": true,
+  "documentation": "https://github.com/timothyanderson82/ha-luxpower",
+  "integration_type": "device",
+  "iot_class": "local_polling",
+  "issue_tracker": "https://github.com/timothyanderson82/ha-luxpower/issues",
+  "requirements": [],
+  "version": "0.1.0"
+}
