@@ -1,0 +1,14 @@
+# Raw dongle captures hold the real serials; anonymise before committing
+captures/
+.env
+.env.*
+secrets.yaml
+
+# Python / tooling
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
