@@ -276,6 +276,8 @@ async def test_adopts_lxp_bridge_ids_for_restored_entities(
     registry.async_update_entity_options(
         runtime.entity_id, "sensor.private", {"suggested_unit_of_measurement": "h"}
     )
+    # The registry also remembers the unit the entity last reported
+    registry.async_update_entity(runtime.entity_id, unit_of_measurement="h")
     # Something else holds one target ID: that entity is left alone
     registry.async_get_or_create("sensor", "other", "x", suggested_object_id=f"{prefix}_status")
     registry.async_get_or_create(

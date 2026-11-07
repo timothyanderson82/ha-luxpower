@@ -54,8 +54,15 @@ def async_adopt_legacy_ids(hass: HomeAssistant, serial: str, datalog: str) -> No
         registry.async_update_entity(current, new_entity_id=target)
         _LOGGER.info("Renamed %s to %s", current, target)
 
-    # 0.1.0 showed total runtime in hours; lxp-bridge's statistics are in seconds
+    # 0.1.0 showed total runtime in hours; lxp-bridge's statistics are in seconds.
+    # Clearing the saved unit is not enough: the sensor would restore the unit
+    # last stored in the registry, so save seconds explicitly.
     runtime = registry.async_get_entity_id("sensor", DOMAIN, f"{serial}_runtime")
     entry = registry.async_get(runtime) if runtime else None
-    if entry and entry.options.get("sensor.private", {}).get("suggested_unit_of_measurement"):
-        registry.async_update_entity_options(entry.entity_id, "sensor.private", None)
+    if (
+        entry
+        and entry.options.get("sensor.private", {}).get("suggested_unit_of_measurement") == "h"
+    ):
+        registry.async_update_entity_options(
+            entry.entity_id, "sensor.private", {"suggested_unit_of_measurement": "s"}
+        )
