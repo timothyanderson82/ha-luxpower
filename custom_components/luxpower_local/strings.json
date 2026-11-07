@@ -14,7 +14,7 @@
           "host": "IP address of the Wi-Fi dongle plugged into the inverter.",
           "port": "The dongle listens on 8000 unless it has been changed.",
           "datalog": "The 10-character serial on the dongle's label, also shown in the LuxPower app as the datalog.",
-          "legacy_entity_ids": "Give entities the IDs lxp-bridge's MQTT entities had (sensor.lxp_<serial>_...), so their history and the energy dashboard carry on. Delete the old MQTT entities first."
+          "legacy_entity_ids": "Give entities the IDs lxp-bridge's MQTT entities had (sensor.lxp_[serial]_...), so their history and the energy dashboard carry on. Delete the old MQTT entities first."
         }
       },
       "reconfigure": {
